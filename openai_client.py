@@ -3,10 +3,21 @@ from openai import OpenAI
 from env_loader import DotenvEnvLoader
 
 class OpenAIClient:
-    def __init__(self, env_loader, logger=None):
+    _instance = None
+
+    def __new__(cls, env_loader=None, logger=None):
+        if not cls._instance:
+            cls._instance = super().__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
+
+    def __init__(self, env_loader=None, logger=None):
         """
         Initialize the OpenAI client with credentials from environment variables.
         """
+        if self._initialized:
+            return
+
         if logger is None:
             logging.basicConfig(
                 level=logging.INFO,
@@ -17,6 +28,10 @@ class OpenAIClient:
             self.logger = logger
 
         self.logger.info("Initializing OpenAI client")
+
+        if env_loader is None:
+            env_loader = DotenvEnvLoader()
+
         self.env_loader = env_loader
 
         api_key = self.env_loader.get_api_key()
@@ -40,6 +55,7 @@ class OpenAIClient:
             project=project
         )
 
+        self._initialized = True
         self.logger.info("OpenAI client initialized successfully.")
 
 # Example usage:
